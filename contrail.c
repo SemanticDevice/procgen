@@ -1,10 +1,14 @@
 #include <allegro5/allegro5.h>
 #include <allegro5/allegro_primitives.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #define WIN_WIDTH_PX (800)
 #define WIN_HEIGHT_PX (800)
+#define CENTER_X_PX (WIN_HEIGHT_PX / 2)
+#define CENTER_Y_PX (WIN_WIDTH_PX / 2)
+#define RADIUS_PX (WIN_WIDTH_PX / 3)
 
 #define FPS (60.0f)
 
@@ -36,7 +40,7 @@ void Particle_Update(struct Particle *p, double dt);
 void Particle_Draw(struct Particle *p);
 void Init_Particles(void);
 
-#define NUM_PARTICLES (1000)
+#define NUM_PARTICLES (4000)
 struct Particle particles[NUM_PARTICLES];
 
 int main() {
@@ -151,8 +155,12 @@ static bool IsRunning() { return !doexit; }
 void Particle_Update(struct Particle *p, double dt) {
   float x = p->x + p->velocity_x * dt;
   float y = p->y + p->velocity_y * dt;
+  const float r_squared = RADIUS_PX * RADIUS_PX;
+  float d = (abs(x - p->origin_x) * abs(x - p->origin_x)) +
+            ((abs(y - p->origin_y) * abs(y - p->origin_y)));
 
-  if (x < 0.0 || x > WIN_HEIGHT_PX || y < 0.0 || y > WIN_WIDTH_PX) {
+  if (d > r_squared) {
+    //  if (x < 0.0 || x > WIN_WIDTH_PX || y < 0.0 || y > WIN_HEIGHT_PX) {
     p->x = p->origin_x;
     p->y = p->origin_y;
   } else {
@@ -167,14 +175,25 @@ void Particle_Draw(struct Particle *p) {
 }
 
 void Init_Particles(void) {
+  const float mag[8] = {10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0};
   for (int i = 0; i < NUM_PARTICLES; i++) {
+    float magnitude = mag[rand() % 8];
+    float angle = ((float)rand() / RAND_MAX) * 360.0f;  // direction of particle
+    float vel_x = cos(angle) * magnitude;
+    float vel_y = sin(angle) * magnitude;
+
     particles[i].size = 3;
     particles[i].color = al_map_rgb(0xff, rand() % 0xff, 0x38);
-    particles[i].origin_x = WIN_HEIGHT_PX / 2;
-    particles[i].origin_y = WIN_WIDTH_PX / 2;
-    particles[i].x = WIN_HEIGHT_PX / 2;
-    particles[i].y = WIN_WIDTH_PX / 2;
-    particles[i].velocity_x = 100.0 - (float)rand() / (float)(RAND_MAX / 200.0);
-    particles[i].velocity_y = 100.0 - (float)rand() / (float)(RAND_MAX / 200.0);
+    particles[i].origin_x = CENTER_X_PX;
+    particles[i].origin_y = CENTER_Y_PX;
+    particles[i].x = CENTER_X_PX;
+    particles[i].y = CENTER_Y_PX;
+    //    particles[i].velocity_x = 100.0 - (float)rand() / (float)(RAND_MAX /
+    //    200.0); particles[i].velocity_y = 100.0 - (float)rand() /
+    //    (float)(RAND_MAX / 200.0);
+    // particles[i].velocity_x = 100 - rand() % 200;
+    // particles[i].velocity_y = 100 - rand() % 200;
+    particles[i].velocity_x = vel_x;
+    particles[i].velocity_y = vel_y;
   }
 }
