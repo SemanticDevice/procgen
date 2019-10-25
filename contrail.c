@@ -174,7 +174,7 @@ void Init_Particles(void) {
     particles[i].origin_y = WIN_WIDTH_PX / 2;
     particles[i].x = WIN_HEIGHT_PX / 2;
     particles[i].y = WIN_WIDTH_PX / 2;
-    particles[i].velocity_x = 100 - (rand() % 200);
-    particles[i].velocity_y = 100 - (rand() % 200);
+    particles[i].velocity_x = 100.0 - (float)rand() / (float)(RAND_MAX / 200.0);
+    particles[i].velocity_y = 100.0 - (float)rand() / (float)(RAND_MAX / 200.0);
   }
 }
