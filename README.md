@@ -5,6 +5,8 @@ A place to play around with graphical procedural generation
 
 This pattern appears visually random, but once in a while particles align to form visible square  boundaries. I am guessing this has something to do with integer truncation in velocity  initialization.
 
+Lively discussion on reddit is here: https://old.reddit.com/r/proceduralgeneration/comments/dmyscn/patterns_emerging_from_an_accidentally_badly/
+
 ![beat_square pattern example](https://github.com/SemanticDevice/procgen/blob/master/beat_square.gif)
 
 ## beat_circle
