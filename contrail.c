@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "noise1234.h"
 
 #define WIN_WIDTH_PX (800)
 #define WIN_HEIGHT_PX (800)
