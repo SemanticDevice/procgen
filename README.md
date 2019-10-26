@@ -19,7 +19,7 @@ Somewhat similar to the beat_square pattern, but velocities are deliberately cho
 
 An attempt at making a visualization similar to this:
 
-https://player.vimeo.com/video/341078895?autoplay=1&loop=1&autopause=0?muted=1&background=1
+https://player.vimeo.com/video/341078895?autoplay=0&loop=0&autopause=0?muted=1&background=0
 
 which was plucked from the front page of https://nannou.cc/.
 
