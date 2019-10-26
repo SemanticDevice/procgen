@@ -6,3 +6,6 @@ contrail: contrail.c
 
 beat_circle: beat_circle.c
 	$(CC) -o beat_circle beat_circle.c -ggdb -lm $(CFLAGS)
+
+beat_square: beat_square.c
+	$(CC) -o beat_square beat_square.c -ggdb -lm $(CFLAGS)
