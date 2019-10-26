@@ -8,7 +8,7 @@
 #define WIN_HEIGHT_PX (800)
 #define CENTER_X_PX (WIN_HEIGHT_PX / 2)
 #define CENTER_Y_PX (WIN_WIDTH_PX / 2)
-#define RADIUS_PX (WIN_WIDTH_PX / 3)
+#define RADIUS_PX (WIN_WIDTH_PX / 2)
 
 #define FPS (60.0f)
 
@@ -26,21 +26,32 @@ static void Update(double dt, ALLEGRO_EVENT *ev);
 static bool IsRunning();
 
 struct Particle {
-  ALLEGRO_COLOR color;
-  unsigned int size;
-  float origin_x;
-  float origin_y;
   float x;
   float y;
-  float velocity_x;
-  float velocity_y;
+  ALLEGRO_COLOR color;
+  unsigned int size;
+  float src_x;
+  float src_y;
+  float vel_x;
+  float vel_y;
+  float vel_mag;    // in units of pixels/sec
+  float vel_angle;  // in units of degrees
+  float dst_x;
+  float dst_y;
+  float lerp_duration;  // how many seconds the particle takes to travel from
+                        // src to dst. Calculated from velocity
+  float lerp_time;      // how many seconds the particle has been traveling from
+                        // src.
 };
 
 void Particle_Update(struct Particle *p, double dt);
 void Particle_Draw(struct Particle *p);
+void Particle_SetRandomVelocity(struct Particle *p);
 void Init_Particles(void);
+float Lerp(float start, float end, float percent);
+float EaseOut(float t);
 
-#define NUM_PARTICLES (4000)
+#define NUM_PARTICLES (50)
 struct Particle particles[NUM_PARTICLES];
 
 int main() {
@@ -153,47 +164,52 @@ static void Update(double dt, ALLEGRO_EVENT *ev) {
 static bool IsRunning() { return !doexit; }
 
 void Particle_Update(struct Particle *p, double dt) {
-  float x = p->x + p->velocity_x * dt;
-  float y = p->y + p->velocity_y * dt;
-  const float r_squared = RADIUS_PX * RADIUS_PX;
-  float d = (abs(x - p->origin_x) * abs(x - p->origin_x)) +
-            ((abs(y - p->origin_y) * abs(y - p->origin_y)));
-
-  if (d > r_squared) {
-    //  if (x < 0.0 || x > WIN_WIDTH_PX || y < 0.0 || y > WIN_HEIGHT_PX) {
-    p->x = p->origin_x;
-    p->y = p->origin_y;
+  p->lerp_time += dt;
+  if (p->lerp_time > p->lerp_duration) {
+    p->x = p->src_x;
+    p->y = p->src_y;
+    Particle_SetRandomVelocity(p);
   } else {
-    p->x = x;
-    p->y = y;
+    p->x = Lerp(p->src_x, p->dst_x, EaseOut(p->lerp_time / p->lerp_duration));
+    p->y = Lerp(p->src_y, p->dst_y, EaseOut(p->lerp_time / p->lerp_duration));
   }
 }
 
 void Particle_Draw(struct Particle *p) {
-  al_draw_filled_rectangle(p->x, p->y, p->x + p->size, p->y + p->size,
-                           p->color);
+  al_draw_line(p->src_x, p->src_y, p->x, p->y, p->color, 1);
+
+  // Draw the head of the line (the actual particle) centered at (p->x, p->y)
+  al_draw_filled_rectangle(p->x - p->size / 2, p->y - p->size / 2,
+                           p->x + p->size / 2, p->y + p->size / 2, p->color);
 }
 
 void Init_Particles(void) {
-  const float mag[8] = {10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0};
   for (int i = 0; i < NUM_PARTICLES; i++) {
-    float magnitude = mag[rand() % 8];
-    float angle = ((float)rand() / RAND_MAX) * 360.0f;  // direction of particle
-    float vel_x = cos(angle) * magnitude;
-    float vel_y = sin(angle) * magnitude;
-
-    particles[i].size = 3;
+    particles[i].size = 5;
     particles[i].color = al_map_rgb(0xff, rand() % 0xff, 0x38);
-    particles[i].origin_x = CENTER_X_PX;
-    particles[i].origin_y = CENTER_Y_PX;
+    particles[i].src_x = CENTER_X_PX;
+    particles[i].src_y = CENTER_Y_PX;
     particles[i].x = CENTER_X_PX;
     particles[i].y = CENTER_Y_PX;
-    //    particles[i].velocity_x = 100.0 - (float)rand() / (float)(RAND_MAX /
-    //    200.0); particles[i].velocity_y = 100.0 - (float)rand() /
-    //    (float)(RAND_MAX / 200.0);
-    // particles[i].velocity_x = 100 - rand() % 200;
-    // particles[i].velocity_y = 100 - rand() % 200;
-    particles[i].velocity_x = vel_x;
-    particles[i].velocity_y = vel_y;
+    Particle_SetRandomVelocity(&particles[i]);
   }
 }
+
+void Particle_SetRandomVelocity(struct Particle *p) {
+  p->vel_mag = 50.0 + ((float)rand() / RAND_MAX) * 100.0;
+  p->vel_angle = ((float)rand() / RAND_MAX) * 2.0 * M_PI;
+  p->vel_x = cos(p->vel_angle) * p->vel_mag;
+  p->vel_y = sin(p->vel_angle) * p->vel_mag;
+  p->dst_x = p->src_x + cos(p->vel_angle) * RADIUS_PX;
+  p->dst_y = p->src_y + sin(p->vel_angle) * RADIUS_PX;
+  p->lerp_duration = sqrtf((p->dst_x - p->src_x) * (p->dst_x - p->src_x) +
+                           (p->dst_y - p->src_y) * (p->dst_y - p->src_y)) /
+                     p->vel_mag;
+  p->lerp_time = 0.0;
+}
+
+float Lerp(float start, float end, float percent) {
+  return (start + (end - start) * percent);
+}
+
+float EaseOut(float t) { return (1 - (1 - t) * (1 - t)); }
