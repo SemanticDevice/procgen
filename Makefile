@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=$$(pkg-config allegro-5 allegro_font-5 allegro_image-5 allegro_primitives-5 --libs --cflags)
-INC_DIRS=-Iperlin-noise/src
+INC_DIRS=-Iperlin-noise/src -Iprocgenlib
 
 contrail: contrail.c
 	$(CC) -o contrail contrail.c perlin-noise/src/noise1234.c -ggdb -lm $(CFLAGS) $(INC_DIRS)

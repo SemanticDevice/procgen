@@ -23,7 +23,9 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "include",
-                "/usr/include"
+                "/usr/include",
+                "perlin-noise/src",
+                "procgenlib"
             ],
             "defines": [
                 "_DEBUG",
