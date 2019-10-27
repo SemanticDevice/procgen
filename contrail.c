@@ -45,6 +45,30 @@ struct Particle {
                         // src.
 };
 
+struct Line {
+  ALLEGRO_COLOR color;
+  float src_x;
+  float src_y;
+  float dst_x;
+  float dst_y;
+};
+
+#define NUM_LINE_SEGS (16)
+#define NUM_CONTRAILS (2)
+
+struct Contrail {
+  struct Line main_line;
+  struct Line line_segs[NUM_LINE_SEGS];
+};
+
+void Line_BreakIntoSegs(struct Line *sl, struct Line *segs,
+                        unsigned int num_segs);
+void AddNoiseToLineSegs(struct Line *segs, unsigned int num_segs);
+void Init_Contrails(void);
+void Contrail_Draw(struct Contrail *c);
+
+struct Contrail contrails[NUM_CONTRAILS];
+
 void Particle_Update(struct Particle *p, double dt);
 void Particle_Draw(struct Particle *p);
 void Particle_SetRandomVelocity(struct Particle *p);
@@ -61,6 +85,7 @@ int main() {
 
   Initialize();
   Init_Particles();
+  Init_Contrails();
 
   while (IsRunning()) {
     al_wait_for_event(eq, &ev);
@@ -138,10 +163,31 @@ static void Draw() {
     redraw = false;
     al_clear_to_color(al_map_rgb(0x30, 0x34, 0x3f));
 
+#if 0
     for (int i = 0; i < NUM_PARTICLES; i++) {
       Particle_Draw(&particles[i]);
     }
+#endif
+#if 0
+    al_draw_line(200, 400, 600, 400, al_map_rgb(0xff, 0x70, 0x3b),
+                 8 * (noise1(al_get_time()) + 1));
+#endif
+#if 0
+    for (int i = 0; i < NUM_CONTRAILS; i++) {
+      Contrail_Draw(&contrails[i]);
+    }
+#endif
 
+    {
+      float xs = 400;
+      float xy = 400;
+      float len = 100;
+      float angle = M_PI / 128;
+      float base_len = 2 * len * tan(angle);
+
+      al_draw_triangle(xs - base_len / 2, xy, xs + base_len / 2, xy, xs,
+                       xy - len, al_map_rgb(0x70, 0x70, 0x70), 1);
+    }
     al_flip_display();
   }
 }
@@ -214,3 +260,70 @@ float Lerp(float start, float end, float percent) {
 }
 
 float EaseOut(float t) { return (1 - (1 - t) * (1 - t)); }
+
+void Line_BreakIntoSegs(struct Line *sl, struct Line *segs,
+                        unsigned int num_segs) {
+  float len_x = (sl->dst_x - sl->src_x) / num_segs;
+  float len_y = (sl->dst_y - sl->src_y) / num_segs;
+
+  for (int i = 0; i < num_segs; i++) {
+    segs[i].src_x = sl->src_x + i * len_x;
+    segs[i].src_y = sl->src_y + i * len_y;
+    segs[i].dst_x = sl->src_x + (i + 1) * len_x;
+    segs[i].dst_y = sl->src_y + (i + 1) * len_y;
+  }
+}
+void AddNoiseToLineSegs(struct Line *segs, unsigned int num_segs) {
+  if (num_segs == 0) {
+    return;
+  }
+
+  // maximum amount of noise is proportional to the length of a line segment
+  float seg_len =
+      sqrt((segs[0].dst_x - segs[0].src_x) * (segs[0].dst_x - segs[0].src_x) +
+           (segs[0].dst_y - segs[0].src_y) * (segs[0].dst_y - segs[0].src_y));
+  float max_noise_mult = 1.0;
+  float max_noise;
+  float dx;
+  float dy;
+  for (int i = 1; i < num_segs; i++) {
+    max_noise =
+        seg_len * Lerp(1.0, 0.0, EaseOut(((float)i - 1.0) / (float)num_segs));
+    dx = max_noise / 2 - max_noise * (float)rand() / (float)RAND_MAX;
+    dy = max_noise / 2 - max_noise * (float)rand() / (float)RAND_MAX;
+    segs[i].src_x += dx;
+    segs[i].src_y += dy;
+    segs[i - 1].dst_x = segs[i].src_x;
+    segs[i - 1].dst_y = segs[i].src_y;
+  }
+}
+
+void Init_Contrails(void) {
+  for (int i = 0; i < NUM_CONTRAILS; i++) {
+    contrails[i].main_line.color = al_map_rgb(0x80, 0x80, 0x80);
+    if (i == 0) {
+      contrails[i].main_line.src_x = 200;
+      contrails[i].main_line.src_y = 400;
+      contrails[i].main_line.dst_x = 600;
+      contrails[i].main_line.dst_y = 400;
+    } else {
+      contrails[i].main_line.src_x = 600;
+      contrails[i].main_line.src_y = 500;
+      contrails[i].main_line.dst_x = 200;
+      contrails[i].main_line.dst_y = 700;
+    }
+    Line_BreakIntoSegs(&contrails[i].main_line, contrails[i].line_segs,
+                       NUM_LINE_SEGS);
+    AddNoiseToLineSegs(contrails[i].line_segs, NUM_LINE_SEGS);
+  }
+}
+
+void Contrail_Draw(struct Contrail *c) {
+  al_draw_line(c->main_line.src_x, c->main_line.src_y, c->main_line.dst_x,
+               c->main_line.dst_y, c->main_line.color, 1.0);
+  for (int i = 0; i < NUM_LINE_SEGS; i++) {
+    al_draw_line(c->line_segs[i].src_x, c->line_segs[i].src_y,
+                 c->line_segs[i].dst_x, c->line_segs[i].dst_y,
+                 al_map_rgb(0xff, 0xff, 0x38), 1.0);
+  }
+}
