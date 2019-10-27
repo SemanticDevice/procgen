@@ -1,3 +1,6 @@
 [submodule "perlin-noise"]
 	path = perlin-noise
 	url = https://github.com/stegu/perlin-noise.git
+[submodule "procgenlib"]
+	path = procgenlib
+	url = https://github.com/SemanticDevice/procgenlib.git
