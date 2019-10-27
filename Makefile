@@ -11,5 +11,8 @@ beat_circle: beat_circle.c
 beat_square: beat_square.c
 	$(CC) -o beat_square beat_square.c -ggdb -lm $(CFLAGS)
 
-test: test_line_noise.c
-	$(CC) -o test test_line_noise.c perlin-noise/src/noise1234.c -ggdb -lm $(CFLAGS) $(INC_DIRS)
+
+TEST_LINE_SRC_DEPS=test_line_noise.c procgenlib/procgenlib.c procgenlib/draw_allegro5.c perlin-noise/src/noise1234.c
+
+test: $(TEST_LINE_SRC_DEPS)
+	$(CC) -o test $(TEST_LINE_SRC_DEPS) -ggdb -lm $(CFLAGS) $(INC_DIRS)
